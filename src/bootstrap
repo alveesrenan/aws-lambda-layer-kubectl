@@ -1,0 +1,63 @@
+#!/bin/sh
+set -euo pipefail
+
+export HELM_HOME=/tmp/helm
+mkdir -p $HELM_HOME
+
+export PATH=$PATH:/opt/awscli:/opt/kubectl:/opt/helm
+export XDG_CACHE_HOME=$HELM_HOME/.cache
+export XDG_CONFIG_HOME=$HELM_HOME/.config
+export XDG_DATA_HOME=$HELM_HOME/.data
+export KUBECONFIG=/tmp/kubeconfig
+
+check_status() {
+	if [ $1 != 0 ]; then
+		echo
+		echo $2
+		exit $1
+	fi
+}
+# Variables on bootstrap file:
+# $LAMBDA_TASK_ROOT: The directory that contains the function code.
+# $AWS_LAMBDA_RUNTIME_API: The host and port of the runtime API.
+# $_HANDLER: The location to the handler, from the function's configuration.
+
+# Initialization - load function handler
+source $LAMBDA_TASK_ROOT/"$(echo $_HANDLER | cut -d. -f1).sh"
+
+# Checking if cluster name was set within environment variables section.
+if [ -z ${cluster_name:-} ]; then
+    echo "missing cluster_name in lambda environment variables - using 'default' as the cluster_name"
+fi
+cluster_name=${cluster_name-default}
+
+aws eks update-kubeconfig --name "$cluster_name"  --kubeconfig $KUBECONFIG
+check_status $? 'Error to update kubeconfig file.'
+
+# for container-reuse we save cluster_name in /tmp/.env.config
+echo "cluster_name=${cluster_name}" > /tmp/.env.config
+check_status $? 'Error to set cluster name in env.config file'
+
+# initializing helm.
+helm init --client-only --home $HELM_HOME
+check_status $? 'Error to initialize helm setup'
+
+# Processing
+while true
+do
+	HEADERS="$(mktemp)"
+
+	# Get an event. The HTTP request will block until one is received
+	EVENT_DATA=$(curl -sS -LD "$HEADERS" -X GET "http://${AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/invocation/next")
+	
+	# Extract request ID by scraping response headers received above
+	REQUEST_ID=$(grep -Fi Lambda-Runtime-Aws-Request-Id "$HEADERS" | tr -d '[:space:]' | cut -d: -f2)
+
+	# Execute the handler function from the script
+	RESPONSE=$($(echo "$_HANDLER" | cut -d. -f2) "$EVENT_DATA")
+
+	echo "$RESPONSE"
+
+	# Send the response
+	curl -X POST "http://${AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/invocation/$REQUEST_ID/response"  -d "$RESPONSE"
+done

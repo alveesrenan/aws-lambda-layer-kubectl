@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template in which is created t=the lambda responsible for interact with EKS Cluster and its IAM Roles and Policies.
+
+Parameters:
+  ClusterName:
+    Type: String
+  FunctionName:
+    Type: String
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${FunctionName}-execution-role"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service: lambda.amazonaws.com
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  LambdaExecutionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${FunctionName}-execution-policy"
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "ec2:DescribeInstances"
+              - "ec2:DescribeTags"
+              - "eks:DescribeCluster"
+            Resource: '*'
+      Roles:
+        - !Ref LambdaExecutionRole
+    
+  LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Handler: function.handler
+      CodeUri: ./src
+      Runtime: provided
+      Layers:
+        - !Sub "arn:aws:lambda:us-east-1:118275659826:layer:etp-k8s-eks-kubectl-layer:1"
+      MemorySize: 512
+      Environment:
+        Variables:
+          cluster_name: !Ref ClusterName
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 30
+
+Outputs:
+  LambdaIAMRoleArn:
+    Description: Lambda IAM Role ARN
+    Value: !GetAtt LambdaExecutionRole.Arn
+    Export:
+      Name: !Sub 'LambdaIAMRoleArn-${AWS::StackName}'
+  LambdaFuncArn:
+    Description: Lambda Func ARN
+    Value: !GetAtt LambdaFunction.Arn
+    Export:
+      Name: !Sub 'LambdaFuncArn-${AWS::StackName}'
+  LambdaFuncName:
+    Description: Lambda Func Name
+    Value: !Ref LambdaFunction
+    Export:
+      Name: !Sub 'LambdaFuncName-${AWS::StackName}'
