@@ -49,7 +49,7 @@ It's composed by:
     `deploy-layer`: It deploys the lambda layer on AWS to be used by lambda. To do this, run:
     ```bash
     #!/bin/bash
-    ./deploy.sh build-layer
+    ./deploy.sh deploy-layer
     ``` 
 
     `deploy-lambda`: Before you execute this, you must replace `LambdaLayerARN` parameter by the lambda layer arn generated from deploy-layer command. After that, deploy lambda by running:
