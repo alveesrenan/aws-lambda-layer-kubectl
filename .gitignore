@@ -10,3 +10,4 @@ func.d/
 layer.d/
 packaged.yaml
 output-*
+lambda-layer.zip

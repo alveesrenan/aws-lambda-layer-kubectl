@@ -5,7 +5,11 @@ Description: SAM Template in which is created t=the lambda responsible for inter
 Parameters:
   ClusterName:
     Type: String
+    Default: etp-k8s-eks-cluster
   FunctionName:
+    Type: String
+    Default: etp-k8s-eks-kubectl
+  LambdaLayerARN:
     Type: String
 
 Resources:
@@ -48,7 +52,7 @@ Resources:
       CodeUri: ./src
       Runtime: provided
       Layers:
-        - !Sub "arn:aws:lambda:us-east-1:118275659826:layer:etp-k8s-eks-kubectl-layer:1"
+        - !Ref LambdaLayerARN
       MemorySize: 512
       Environment:
         Variables:
@@ -57,18 +61,13 @@ Resources:
       Timeout: 30
 
 Outputs:
-  LambdaIAMRoleArn:
-    Description: Lambda IAM Role ARN
+  LambdaIAMRoleARN:
+    Description: Amazon Resource Name of Lambda IAM Execution Role
     Value: !GetAtt LambdaExecutionRole.Arn
     Export:
-      Name: !Sub 'LambdaIAMRoleArn-${AWS::StackName}'
-  LambdaFuncArn:
-    Description: Lambda Func ARN
+      Name: !Sub 'LambdaIAMRoleARN-${AWS::StackName}'
+  LambdaARN:
+    Description: Amazon Resource Name of Lambda Function.
     Value: !GetAtt LambdaFunction.Arn
     Export:
-      Name: !Sub 'LambdaFuncArn-${AWS::StackName}'
-  LambdaFuncName:
-    Description: Lambda Func Name
-    Value: !Ref LambdaFunction
-    Export:
-      Name: !Sub 'LambdaFuncName-${AWS::StackName}'
+      Name: !Sub 'LambdaARN-${AWS::StackName}'

@@ -3,23 +3,23 @@ Transform: AWS::Serverless-2016-10-31
 Description: SAM Template in which is created lambda layer issuing helm, kubectl and aws-cli binaries.
 
 Parameters:
-  LayerName:
+  LambdaLayerName:
     Type: String
+    Default: etp-k8s-eks-kubectl-layer
 
 Resources:
   LambdaLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      LayerName: !Ref LayerName
-      ContentUri: ./layer.zip
+      LayerName: !Ref LambdaLayerName
+      ContentUri: ./lambda-layer.zip
       CompatibleRuntimes: 
         - provided
-      LicenseInfo: 'Available under the MIT-0 license.'
       RetentionPolicy: Retain
 
 Outputs:
-  LayerVersionArn:
-    Description: ARN for the published layer version
+  LambdaLayerARN:
+    Description: Amazon Resource Name of Lambda Layer provisioned.
     Value: !Ref LambdaLayer
     Export:
-      Name: !Sub 'LayerVersionArn-${AWS::StackName}'
+      Name: !Sub 'LambdaLayerARN-${AWS::StackName}'

@@ -19,6 +19,6 @@ function handler () {
     echo "Installing helm chart."
     helm upgrade --install chartmuseum stable/chartmuseum
 
-    RESPONSE="{\"statusCode\": 200, \"body\": \"Hello from Lambda!\"}"
+    RESPONSE="{\"statusCode\": 200, \"body\": \"Hello from Lambda! Version: 2\"}"
     echo $RESPONSE
 }
