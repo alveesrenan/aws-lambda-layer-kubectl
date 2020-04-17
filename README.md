@@ -1,4 +1,4 @@
-# [aws-lambda-layer-kubectl](#jenkins)
+# [aws-lambda-layer-kubectl](#lambda)
 
 This repo intends to be used as a lambda custom runtime for updating an eks cluster from a lambda.
 
